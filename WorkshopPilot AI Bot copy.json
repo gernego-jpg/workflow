@@ -1,0 +1,483 @@
+{
+  "name": "WorkshopPilot AI Bot copy",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "id": "2ef134ff-8dc6-4340-aba8-55307b5a929c",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        128,
+        688
+      ],
+      "webhookId": "0925648b-0474-4e31-8d91-6e37318fc175",
+      "credentials": {
+        "telegramApi": {
+          "id": "y2ptRJuou5C2akZP",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $(\"Check PDF Format\").item.json.message.document.file_id }}",
+        "additionalFields": {}
+      },
+      "id": "4b5a9193-3496-4b3e-a41d-cff6b6a8e1d0",
+      "name": "Get PDF File",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        832,
+        976
+      ],
+      "webhookId": "850dd4d6-4020-4739-b8db-acb914f4e2cd",
+      "credentials": {
+        "telegramApi": {
+          "id": "y2ptRJuou5C2akZP",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {
+          "joinPages": true
+        }
+      },
+      "id": "c8824e96-bd41-4c1b-a520-90c10ba2381d",
+      "name": "Extract PDF Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1296,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "=content",
+              "value": "={{ $('Generate Workshop Plan').item.json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "chatId",
+              "value": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "eb199039-a590-414f-a692-adc0ecd6cfb6",
+      "name": "Prepare Google Doc Content",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1968,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "folderId": "1Xk5JZ9efW0ZU7YsGKjkPK01_8Dsg6UnF",
+        "title": "={{ $json.topic }} - Educational Material"
+      },
+      "id": "81bc9add-0b2c-4f10-b9c1-9769808b826f",
+      "name": "Create Google Doc",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        2224,
+        976
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "sNjHtOiR25JT4v47",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "={{ \"insert\" }}",
+              "text": "={{ $('Generate Workshop Plan').item.json.content[0].text }}"
+            }
+          ]
+        }
+      },
+      "id": "3af17893-4476-48ef-b6f7-236c6e71e4b9",
+      "name": "Update Google Doc",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        2448,
+        976
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "sNjHtOiR25JT4v47",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Prepare Google Doc Content\").item.json.chatId }}",
+        "text": "=✅ Your educational material has been generated!\n\n📄 Google Doc: https://docs.google.com/document/d/{{ $json.documentId }}/edit\n\n⚠️ Please review before use — AI-assisted, educator-approved.",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "744a3bf6-75dc-42bb-8e8e-e82396fc7a22",
+      "name": "Send Doc Link to Educator",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2720,
+        976
+      ],
+      "webhookId": "2bf3dc61-4d2d-439e-80eb-d89643c8bd50",
+      "credentials": {
+        "telegramApi": {
+          "id": "y2ptRJuou5C2akZP",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.message?.document?.mime_type }}",
+              "rightValue": "application/pdf",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "bf323102-003b-4958-b0c8-2d5b8725ea6e",
+      "name": "Check PDF Format",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        544,
+        944
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Check PDF Format\").item.json.message.chat.id }}",
+        "text": "Please upload data in pdf",
+        "additionalFields": {}
+      },
+      "id": "0042364a-6537-4911-90a1-5125c2295499",
+      "name": "Send PDF Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        624,
+        1248
+      ],
+      "webhookId": "94faf09a-a8d7-4d01-86fd-fb75335ff118",
+      "credentials": {
+        "telegramApi": {
+          "id": "y2ptRJuou5C2akZP",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/start",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "376cbadb-3382-47c1-b190-b382806f08fb",
+      "name": "Start",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        320,
+        928
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "Welcome to WorkshopPilot AI 🎓  This bot generates a detailed workshop plan (duration 90 minutes) based on your materials in PDF format.  ⏳ Please wait about 1.5 minutes until the materials are prepared.  📎 Send me your PDF to get started!",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        704
+      ],
+      "id": "7aaa1397-351d-44b0-bbf2-bedc936a3ce1",
+      "name": "Send a welcome message",
+      "webhookId": "6356f47c-5686-4e20-9d50-5a791e719c37",
+      "credentials": {
+        "telegramApi": {
+          "id": "y2ptRJuou5C2akZP",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "⏳ Your PDF has been received!  Generating your workshop plan...  This will take about 1.5 minutes. Please wait.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        832
+      ],
+      "id": "cb0a712f-7435-4553-a2bb-afcbe6c62d19",
+      "name": "Send a text message",
+      "webhookId": "e3d78819-bb80-4817-82e8-a1450184f647",
+      "credentials": {
+        "telegramApi": {
+          "id": "y2ptRJuou5C2akZP",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-6",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-6"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Based on the following PDF content, create a detailed 90-minute \nworkshop plan.\n\nPDF CONTENT:\n{{ $json.text }}\n\n---\n\nGenerate the workshop plan using EXACTLY this structure:\n\n# Workshop Title: [derive from PDF content]\n\n## 1. Learning Objectives\n- List 4-5 specific, measurable objectives based on PDF content\n\n## 2. Session Outline\n| Time | Activity | Description |\n|------|----------|-------------|\n| 0-10 min | ... | ... |\n| 10-30 min | ... | ... |\n| 30-55 min | ... | ... |\n| 55-75 min | ... | ... |\n| 75-90 min | ... | ... |\n\n## 3. Key Discussion Points\n- 5-7 core concepts from the PDF for group discussion\n\n## 4. Activities & Exercises\n- 2-3 practical exercises directly related to PDF content\n\n## 5. Assessment Methods\n- Pre-workshop: ...\n- During workshop: ...\n- Post-workshop: ...\n\n## 6. Key Takeaways\n- 3-5 main conclusions students should leave with"
+            }
+          ]
+        },
+        "options": {
+          "system": "You are an expert educational content creator for higher education.  Your task is to generate a comprehensive 90-minute workshop plan  STRICTLY based on the provided PDF content only.  RULES: - Use ONLY information from the provided PDF - Do NOT add external knowledge or assumptions - Target audience: Master's degree students in Economics and Finance - Output must be structured, clear, and academic in tone",
+          "maxTokens": 2000,
+          "temperature": 0.3
+        }
+      },
+      "id": "81cae7f7-c284-4889-b4f8-67af8435645c",
+      "name": "Generate Workshop Plan",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        960
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "AIbwIGdq4JUcWIyd",
+          "name": "Anthropic account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get PDF File": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract PDF Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF Text": {
+      "main": [
+        [
+          {
+            "node": "Generate Workshop Plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Google Doc Content": {
+      "main": [
+        [
+          {
+            "node": "Create Google Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Google Doc": {
+      "main": [
+        [
+          {
+            "node": "Update Google Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Google Doc": {
+      "main": [
+        [
+          {
+            "node": "Send Doc Link to Educator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check PDF Format": {
+      "main": [
+        [
+          {
+            "node": "Get PDF File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send PDF Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Send a welcome message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check PDF Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a welcome message": {
+      "main": [
+        []
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        []
+      ]
+    },
+    "Generate Workshop Plan": {
+      "main": [
+        [
+          {
+            "node": "Prepare Google Doc Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "da65f1f9-2470-4de0-98a8-fb2356981660",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2f174bc09fda5feed13b2138233fc5c6008f09a3cdf1c03f8a62f984c268606a"
+  },
+  "nodeGroups": [],
+  "id": "vqoCI3LU4ZIDjIFn",
+  "tags": []
+}
